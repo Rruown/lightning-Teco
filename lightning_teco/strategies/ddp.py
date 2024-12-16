@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 class SDAADDPStrategy(DDPStrategy):
     """Strategy for distributed training on multiple SDAA devices."""
 
-    strategy_name = "sdaa_ddp"
+    strategy_name = "dpp_sdaa"
 
     def __init__(
         self,

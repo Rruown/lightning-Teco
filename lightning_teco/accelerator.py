@@ -42,6 +42,8 @@ class SDAAAccelerator(Accelerator):
         if device.type != "sdaa":
             raise MisconfigurationException(
                 f"Device should be SDAA, got {device} instead.")
+        if device.index is None:
+            device = 0
         torch.sdaa.set_device(device)
 
     def setup(self, trainer: "pl.Trainer") -> None:
@@ -75,9 +77,7 @@ class SDAAAccelerator(Accelerator):
     def is_available() -> bool:
         """Return a bool indicating if SDAA is currently available."""
         try:
-            return True
-            # import torch_sdaa
-            # return torch.sdaa.is_available()
+            return torch.sdaa.is_available()
         except (AttributeError, NameError):
             return False
 

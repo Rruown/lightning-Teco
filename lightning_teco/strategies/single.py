@@ -33,7 +33,7 @@ from lightning_teco.plugins.io_plugin import SDAACheckpointIO
 class SingleSDAAStrategy(SingleDeviceStrategy):
     """Strategy for training on single SDAA device."""
 
-    strategy_name = "sdaa_single"
+    strategy_name = "single_sdaa"
 
     def __init__(
         self,
