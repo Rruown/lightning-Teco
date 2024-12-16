@@ -17,16 +17,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 from lightning_utilities import module_available
 
+import pytorch_lightning as pl
 from lightning_teco.utils.imports import _SDAA_AVAILABLE
-from lightning_teco.utils.resources import _parse_sdaas, device_count, get_device_stats
-
-if _SDAA_AVAILABLE:
-    import torch_sdaa
+from lightning_teco.utils.resources import _parse_sdaa_ids, num_sdaa_devices
 
 
 from pytorch_lightning.accelerators.accelerator import Accelerator
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
 
+if _SDAA_AVAILABLE:
+    import torch_sdaa
 
 class SDAAAccelerator(Accelerator):
     """Accelerator for SDAA devices."""
@@ -42,34 +42,42 @@ class SDAAAccelerator(Accelerator):
         if device.type != "sdaa":
             raise MisconfigurationException(
                 f"Device should be SDAA, got {device} instead.")
+        torch.sdaa.set_device(device)
+
+    def setup(self, trainer: "pl.Trainer") -> None:
+        # TODO refactor input from trainer to local_rank @four4fish
+        # clear cache before training
+        torch.sdaa.empty_cache()
 
     def get_device_stats(self, device: Union[torch.device, str, int]) -> Dict[str, Any]:
         """Return a map of the following metrics with their values."""
-        return get_device_stats(device)
+        return torch.sdaa.memory_stats(device)
 
     def teardown(self) -> None:
-        pass
+        torch.sdaa.empty_cache()
 
     @staticmethod
     def parse_devices(devices: Union[int, str, List[int]]) -> Optional[int]:
         """Accelerator device parsing logic."""
-        return _parse_sdaas(devices)
+        return _parse_sdaa_ids(devices)
 
     @staticmethod
     def get_parallel_devices(devices: int) -> List[torch.device]:
         """Get parallel devices for the Accelerator."""
-        return [torch.device("sdaa")] * devices
+        return [torch.device("sdaa", i) for i in devices]
 
     @staticmethod
     def auto_device_count() -> int:
         """Return the number of SDAA devices when the devices is set to auto."""
-        return device_count()
+        return num_sdaa_devices()
 
     @staticmethod
     def is_available() -> bool:
         """Return a bool indicating if SDAA is currently available."""
         try:
-            return torch.sdaa.is_available()
+            return True
+            # import torch_sdaa
+            # return torch.sdaa.is_available()
         except (AttributeError, NameError):
             return False
 
@@ -80,16 +88,6 @@ class SDAAAccelerator(Accelerator):
             return torch.sdaa.get_device_name()
         except (AttributeError, NameError):
             return ""
-
-    @staticmethod
-    def is_fp8_available() -> Tuple[bool, str]:
-        """Returns a bool indicating if fp8 is available, with reason if not available."""
-        return False
-
-    @staticmethod
-    def is_lazy() -> bool:
-        """Checks if lazy is enabled or not."""
-        return False
 
     @classmethod
     def register_accelerators(cls, accelerator_registry: Dict) -> None:

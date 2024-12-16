@@ -18,17 +18,7 @@ import torch
 from lightning_utilities.core.imports import RequirementCache, compare_version
 from packaging.version import Version
 
-from lightning_teco.utils.resources import _SDAA_AVAILABLE, get_sdaa_synapse_version  # noqa: F401
+from lightning_teco.utils.resources import _SDAA_AVAILABLE  # noqa: F401
 
-# _SDAA_SYNAPSE_GREATER_EQUAL_1_17_0 = Version(get_sdaa_synapse_version()) >= Version("1.17.0")
-# _TORCH_LESSER_EQUAL_1_13_1 = compare_version("torch", operator.le, "1.13.1")
-# _TORCH_GREATER_EQUAL_2_0_0 = compare_version("torch", operator.ge, "2.0.0")
-# _TORCH_LESSER_2_3_0 = Version(Version(torch.__version__).base_version) < Version("2.3.0")
-# _LIGHTNING_GREATER_EQUAL_2_0_0 = compare_version("lightning", operator.ge, "2.0.0") or compare_version(
-#     "pytorch_lightning", operator.ge, "2.0.0"
-# )
-# _LIGHTNING_GREATER_EQUAL_2_3_0 = compare_version("lightning", operator.ge, "2.3.0", True) or compare_version(
-#     "pytorch_lightning", operator.ge, "2.3.0", True
-# )
 _TORCHVISION_AVAILABLE = RequirementCache("torchvision")
 _KINETO_AVAILABLE = torch.profiler.kineto_available()

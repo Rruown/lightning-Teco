@@ -16,197 +16,141 @@ import re
 import torch
 import subprocess
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+from typing import Any, Dict, List, Optional, Tuple, Union, MutableSequence
+from lightning_lite.plugins.environments.torchelastic import TorchElasticEnvironment
 from lightning_utilities import module_available
 from lightning_utilities.core.imports import package_available
-from lightning_utilities.core.rank_zero import rank_zero_debug, rank_zero_warn
-
-_SDAA_AVAILABLE = package_available("torch_sdaa")
-_INTEL_NEURAL_COMPRESSOR_AVAILABLE = package_available("neural_compressor")
-
-if _SDAA_AVAILABLE:
-    import torch_sdaa
 
 
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
 
+_SDAA_AVAILABLE = package_available("torch_sdaa")
 
-def _parse_sdaas(devices: Optional[Union[int, str, List[int]]]) -> Optional[int]:
-    """Parse the SDAAs given in the format as accepted by the ``Trainer`` for the ``devices`` flag.
+
+def _parse_sdaa_ids(
+        sdaas: Optional[Union[int, str, List[int]]]) -> Optional[List[int]]:
+    """
+    Parses the SDAA IDs given in the format as accepted by the
+    :class:`~pytorch_lightning.trainer.Trainer`.
 
     Args:
-        devices: An integer that indicates the number of Gaudi devices to be used
+        sdaas: An int -1 or string '-1' indicate that all available SDAAs should be used.
+            A list of unique ints or a string containing a list of comma separated unique integers
+            indicates specific SDAAs to use.
+            An int of 0 means that no SDAAs should be used.
+            Any int N > 0 indicates that SDAAs [0..N) should be used.
 
     Returns:
-        Either an integer or ``None`` if no devices were requested
+        A list of SDAAs to be used or ``None`` if no SDAAs were requested
 
     Raises:
         MisconfigurationException:
-            If devices aren't of type `int` or `str`
-
+            If no SDAAs are available but the value of sdaas variable indicates request for SDAAs
     """
-    if devices is not None and not isinstance(devices, (int, str)):
-        raise MisconfigurationException("`devices` for `SDAAAccelerator` must be int, string or None.")
+    # Check that sdaas param is None, Int, String or Sequence of Ints
+    _check_data_type(sdaas)
 
-    return int(devices) if isinstance(devices, str) else devices
+    # Handle the case when no SDAAs are requested
+    if sdaas is None or (isinstance(sdaas, int) and sdaas == 0) or str(sdaas).strip() in ("0", "[]"):
+        return None
+
+    # We know the user requested SDAAs therefore if some of the
+    # requested SDAAs are not available an exception is thrown.
+    sdaas = _normalize_parse_sdaa_string_input(sdaas)
+    sdaas = _normalize_parse_sdaa_input_to_list(sdaas)
+    if not sdaas:
+        raise MisconfigurationException(
+            "SDAAs requested but none are available.")
+
+    if (
+        TorchElasticEnvironment.detect()
+        and len(sdaas) != 1
+        and len(_get_all_available_sdaas()) == 1
+    ):
+        # Omit sanity check on torchelastic because by default it shows one visible SDAA per process
+        return sdaas
+
+    # Check that SDAAs are unique. Duplicate SDAAs are not supported by the backend.
+    _check_unique(sdaas)
+
+    return _sanitize_sdaa_ids(sdaas)
 
 
-def _parse_sdaa_synapse_versions(line: str) -> Tuple[str, str]:
-    """Parse the CMD output with version capture.
+def _normalize_parse_sdaa_string_input(s: Union[int, str, List[int]]) -> Union[int, List[int]]:
+    if not isinstance(s, str):
+        return s
+    if s == "-1":
+        return -1
+    if "," in s:
+        return [int(x.strip()) for x in s.split(",") if len(x) > 0]
+    return int(s.strip())
+
+
+def _sanitize_sdaa_ids(sdaas: List[int]) -> List[int]:
+    """Checks that each of the SDAAs in the list is actually available. Raises a MisconfigurationException if any of
+    the SDAAs is not available.
 
     Args:
-        line: output of `hl-smi -v`
+        sdaas: List of ints corresponding to SDAA indices
 
     Returns:
-        versions of SW and firmware as string
+        Unmodified sdaas variable
 
-    >>> _parse_sdaa_synapse_versions("Habanalabs hl-smi/hlml version hl-1.11.0-fw-45.1.1.1 (Aug 04 2023 - 02:48:21)")
-    ('1.11.0', '45.1.1.1')
-    >>> _parse_sdaa_synapse_versions("any string as fake CMD output")
-    ('', '')
-
+    Raises:
+        MisconfigurationException:
+            If machine has fewer available SDAAs than requested.
     """
-    hl = fw = ""
-    try:
-        # Item "None" of "Optional[Match[str]]" has no attribute "group"
-        hl = re.search(r"hl-([\d\.]+)", line).group(1)  # type: ignore[union-attr]
-        fw = re.search(r"fw-([\d\.]+)", line).group(1)  # type: ignore[union-attr]
-    except AttributeError:
-        rank_zero_warn("Provided string does not include Teco version; check if SDAA is available with `hl-smi`.")
 
-    return hl, fw
-
-
-@lru_cache
-def get_sdaa_synapse_version() -> str:
-    """Get synapse AI version."""
-    try:
-        proc = subprocess.Popen(["teco-smi", "-v"], stdout=subprocess.PIPE)
-    # TODO: FileNotFoundError: No such file or directory: 'hl-smi'
-    except (FileNotFoundError, NotADirectoryError):
-        return "0.0.0"
-    out = proc.communicate()[0]
-    hl, fw = _parse_sdaa_synapse_versions(out.decode("utf-8"))
-    return hl or "0.0.0"
+    all_available_sdaas = _get_all_available_sdaas()
+    for sdaa in sdaas:
+        if sdaa not in all_available_sdaas:
+            raise MisconfigurationException(
+                f"You requested sdaa: {sdaas}\n But your machine only has: {all_available_sdaas}"
+            )
+    return sdaas
 
 
-@lru_cache
-def get_device_name_from_backend() -> str:
-    """Return the name of the SDAA device."""
-    try:
-        # this opens up a device to retrieve the name
-        return torch_sdaa.get_device_name()
-    except (AttributeError, NameError):
-        # return sdaa as default name
-        return "sdaa"
+def _normalize_parse_sdaa_input_to_list(
+        sdaas: Union[int, List[int], Tuple[int, ...]]) -> Optional[List[int]]:
+    assert sdaas is not None
+    if isinstance(sdaas, (MutableSequence, tuple)):
+        return list(sdaas)
+
+    # must be an int
+    if not sdaas:  # sdaas==0
+        return None
+    if sdaas == -1:
+        return _get_all_available_sdaas()
+    return list(range(sdaas))
 
 
-def _parse_for_device_name(line: str) -> str:
-    """Parse the CMD output with version capture.
-
-    Args:
-        line: output of `hl-smi -L`
-
+def _get_all_available_sdaas() -> List[int]:
+    """
     Returns:
-        device name
-
-    >>> _parse_for_device_name("Zephyr 2.7.2-hl-gaudi2-1.17.2-fw-51.5.1-sec-9")
-    ('GAUDI2')
-    >>> _parse_for_device_name("any other input")
-    ('GAUDI')
-
+        A list of all available SDAAs
     """
-    name = "GAUDI"
-    try:
-        name = name + re.search(r"hl-gaudi([\d\-])", line).group(1)  # type: ignore[union-attr]
-    except AttributeError:
-        rank_zero_warn("Provided string does not include device name; check if SDAA is available with `hl-smi -L`.")
-
-    return name.replace("-", "")
+    return list(range(num_sdaa_devices()))
 
 
-@lru_cache
-def get_device_name_from_hlsmi() -> str:
-    """Get sdaa device name from hl-smi."""
-    try:
-        proc = subprocess.Popen(["hl-smi", "-L"], stdout=subprocess.PIPE)
-    except (FileNotFoundError, NotADirectoryError):
-        # if hl-smi is not present, we open a device to get the name
-        return get_device_name_from_backend()
-    out = proc.communicate()[0]
-    return _parse_for_device_name(out.decode("utf-8"))
+def _check_data_type(device_ids: Any) -> None:
+    msg = "Device IDs (SDAA) must be an int, a string, a sequence of ints or None, but you passed"
+
+    if device_ids is None:
+        return
+    elif isinstance(device_ids, (MutableSequence, tuple)):
+        for id_ in device_ids:
+            if type(id_) is not int:
+                raise MisconfigurationException(
+                    f"{msg} a sequence of {type(id_).__name__}.")
+    elif type(device_ids) not in (int, str):
+        raise MisconfigurationException(f"{msg} {type(device_ids).__name__}.")
 
 
-def get_device_stats(device:  Union[torch.device, str, int]) -> Dict[str, Any]:
-    """Return a map of the following metrics with their values.
-
-    Include:
-
-        - Limit: amount of total memory on SDAA device.
-        - InUse: amount of allocated memory at any instance.
-        - MaxInUse: amount of total active memory allocated.
-        - NumAllocs: number of allocations.
-        - NumFrees: number of freed chunks.
-        - ActiveAllocs: number of active allocations.
-        - MaxAllocSize: maximum allocated size.
-        - TotalSystemAllocs: total number of system allocations.
-        - TotalSystemFrees: total number of system frees.
-        - TotalActiveAllocs: total number of active allocations.
-
-    """
-    try:
-        return torch.sdaa.memory_stats(device)
-    except (AttributeError, NameError):
-        rank_zero_debug("SDAA `get_device_stats` failed")
-        return {}
+def _check_unique(device_ids: List[int]) -> None:
+    if len(device_ids) != len(set(device_ids)):
+        raise MisconfigurationException("Device ID's (SDAA) must be unique.")
 
 
-@lru_cache
-def device_count() -> int:
-    """Return the number of SDAA devices when the devices is set to auto."""
-    try:
-        return torch.sdaa.device_count()
-    except (AttributeError, NameError):
-        rank_zero_debug("Function `device_count` failed, returning default count of 8.")
-        return 8
-
-
-@lru_cache
-def is_fp8_available() -> Tuple[bool, str]:
-    return False
-
-
-@lru_cache
-def is_fp16_available() -> Tuple[bool, str]:
-    """Returns a bool indicating if fp16 is available."""
-    if not _SDAA_AVAILABLE:
-        raise OSError("Teco Frameworks required for training on Teco devices.")
-
-    if get_device_name_from_hlsmi() == "GAUDI":
-        return False, "FP16 not supported on Gaudi, Gaudi2 or higher required."
-    return True, ""
-
-
-def modify_fp8_json(file_path: str, patch: dict) -> None:
-    """Edit a specific entry in a JSON file.
-
-    Parameters:
-        file_path (str): The path to the JSON file.
-        patch (dict): Entries to patch in json
-
-    Returns:
-        None
-
-    """
-    # Load the JSON file
-    with open(file_path, encoding="utf-8") as file:
-        data = json.load(file)
-
-    # Edit the specified entries
-    for key, value in patch.items():
-        data[key] = value
-
-    # Update json
-    with open(file_path, "w", encoding="utf-8") as file:
-        json.dump(data, file)
+@lru_cache(1)
+def num_sdaa_devices() -> int:
+    return torch.sdaa.device_count()

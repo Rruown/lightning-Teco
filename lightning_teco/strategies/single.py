@@ -29,11 +29,6 @@ else:
         "You are missing `lightning` or `pytorch-lightning` package, please install it.")
 
 from lightning_teco.plugins.io_plugin import SDAACheckpointIO
-from lightning_teco.utils.imports import _SDAA_AVAILABLE
-
-if _SDAA_AVAILABLE:
-    import torch_sdaa
-
 
 class SingleSDAAStrategy(SingleDeviceStrategy):
     """Strategy for training on single SDAA device."""

@@ -39,8 +39,7 @@ if compare_version("lightning", operator.lt, __min_required_version__) and compa
 
 if _SDAA_AVAILABLE:
     import torch_sdaa
-    from torch.sdaa import is_available
-    SDAA_AVAILABLE: bool = is_available()
+    SDAA_AVAILABLE: bool = torch_sdaa.backend.is_available()
 else:
     SDAA_AVAILABLE = False
 

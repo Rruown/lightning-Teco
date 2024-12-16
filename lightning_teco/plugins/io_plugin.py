@@ -16,20 +16,11 @@ import os
 from typing import Any, Dict, Optional, Union
 
 import torch
-from lightning_utilities import module_available
 from pathlib import Path
-if module_available("lightning"):
-    from lightning.fabric.plugins import TorchCheckpointIO
-    from lightning.fabric.utilities import move_data_to_device
-    from lightning.fabric.utilities.cloud_io import _atomic_save, get_filesystem
 
-elif module_available("pytorch_lightning"):
-    from pytorch_lightning.plugins import TorchCheckpointIO
-    from pytorch_lightning.utilities import move_data_to_device
-    from pytorch_lightning.utilities.cloud_io import atomic_save, get_filesystem
-else:
-    raise ModuleNotFoundError(
-        "You are missing `lightning` or `pytorch-lightning` package, please install it.")
+from pytorch_lightning.plugins import TorchCheckpointIO
+from pytorch_lightning.utilities import move_data_to_device
+from pytorch_lightning.utilities.cloud_io import atomic_save, get_filesystem
 
 
 class SDAACheckpointIO(TorchCheckpointIO):

@@ -17,7 +17,6 @@ from typing import Any, Callable, Dict, List, Optional
 import torch.distributed
 
 import pytorch_lightning as pl
-from pytorch_lightning.overrides import LightningDistributedModule
 from lightning_lite.plugins import CheckpointIO, ClusterEnvironment
 from pytorch_lightning.plugins.io.wrapper import _WrappingCheckpointIO
 from pytorch_lightning.plugins.precision import PrecisionPlugin
@@ -27,9 +26,6 @@ from pytorch_lightning.utilities.exceptions import MisconfigurationException
 
 from lightning_teco.plugins.io_plugin import SDAACheckpointIO
 from lightning_teco.utils.imports import _SDAA_AVAILABLE
-
-if _SDAA_AVAILABLE:
-    import torch_sdaa
 
 log = logging.getLogger(__name__)
 

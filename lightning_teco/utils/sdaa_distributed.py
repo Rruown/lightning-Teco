@@ -16,14 +16,9 @@ import torch
 from lightning_utilities.core.imports import module_available
 from torch import Tensor
 
-if module_available("lightning"):
-    from lightning.fabric.utilities.distributed import _sync_ddp
-    from lightning.fabric.utilities.rank_zero import rank_zero_info, rank_zero_warn
-    from lightning.fabric.utilities.types import ReduceOp
-elif module_available("pytorch_lightning"):
-    from lightning_fabric.utilities.distributed import _sync_ddp
-    from lightning_fabric.utilities.rank_zero import rank_zero_info, rank_zero_warn
-    from lightning_fabric.utilities.types import ReduceOp
+from pytorch_lightning.utilities.distributed import _sync_ddp
+from pytorch_lightning.utilities.rank_zero import rank_zero_info, rank_zero_warn
+from lightning_lite.utilities.types import ReduceOp
 
 from typing import Any, Optional, Union
 
@@ -47,7 +42,8 @@ def _is_reduce_op_supported(reduce_op: Union[ReduceOp, str]) -> bool:
     """Function to check if reduce_op is supported with hccl backend."""
     reduce_op = reduce_op.lower() if isinstance(reduce_op, str) else reduce_op
     if reduce_op in ("mean", "avg") or reduce_op == ReduceOp.AVG:
-        rank_zero_warn(f"{reduce_op} is not supported with TCCL. Going to simulate it")
+        rank_zero_warn(
+            f"{reduce_op} is not supported with TCCL. Going to simulate it")
         return True
     if reduce_op not in supported_reduce_ops and not any(reduce_op is op for op in supported_reduce_ops.values()):
         raise TypeError(
@@ -92,7 +88,8 @@ def _sync_sdaa(result: Tensor, group: Optional[Any] = None, reduce_op: Optional[
     """
     # Simulate mean using sum
     reduce_op = reduce_op.lower() if isinstance(reduce_op, str) else reduce_op
-    op = "sum" if (reduce_op == ReduceOp.AVG or reduce_op in ("mean", "avg")) else reduce_op
+    op = "sum" if (reduce_op == ReduceOp.AVG or reduce_op in (
+        "mean", "avg")) else reduce_op
     result = _sync_ddp(result, group, op)
 
     if reduce_op == ReduceOp.AVG or reduce_op in ("mean", "avg"):
