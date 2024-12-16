@@ -1,0 +1,1 @@
+{"mode": "MEASURE", "observer": "maxabs", "allowlist": {"types": [], "names": []}, "blocklist": {"types": [], "names": []}, "dump_stats_path": "/tmp/pytest-of-agola/pytest-24/test_hpu_precision_fp8_with_dd0/inc_output/measure"}
