@@ -11,10 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
-import re
-import torch
-import subprocess
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple, Union, MutableSequence
 from lightning_lite.plugins.environments.torchelastic import TorchElasticEnvironment
@@ -25,6 +21,9 @@ from lightning_utilities.core.imports import package_available
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
 
 _SDAA_AVAILABLE = package_available("torch_sdaa")
+
+if _SDAA_AVAILABLE:
+    import torch_sdaa
 
 
 def _parse_sdaa_ids(
@@ -153,4 +152,4 @@ def _check_unique(device_ids: List[int]) -> None:
 
 @lru_cache(1)
 def num_sdaa_devices() -> int:
-    return torch.sdaa.device_count()
+    return torch_sdaa.backend.device_count()

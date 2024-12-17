@@ -77,7 +77,7 @@ class SDAAFSDPStrategy(FSDPStrategy, SDAAParallelStrategy):
 
     """
 
-    strategy_name = "hpu_fsdp"
+    strategy_name = "sdaa_fsdp"
     _registered_strategies: List[str] = []
 
     def __init__(
@@ -87,7 +87,7 @@ class SDAAFSDPStrategy(FSDPStrategy, SDAAParallelStrategy):
         cluster_environment: Optional[ClusterEnvironment] = None,
         checkpoint_io: Optional[CheckpointIO] = SDAACheckpointIO(),
         precision_plugin: Optional[Precision] = SDAAFSDPPrecision("bf16-mixed"),
-        process_group_backend: Optional[str] = "hccl",
+        process_group_backend: Optional[str] = "tccl",
         timeout: Optional[timedelta] = default_pg_timeout,
         cpu_offload: Union[bool, "CPUOffload", None] = None,
         mixed_precision: Optional["MixedPrecision"] = None,
@@ -149,7 +149,7 @@ class SDAAFSDPStrategy(FSDPStrategy, SDAAParallelStrategy):
     @override
     def root_device(self) -> torch.device:
         assert self.parallel_devices is not None
-        return torch.device("hpu", torch.hpu.current_device())
+        return torch.device("sdaa", torch.sdaa.current_device())
 
     def _setup_model(self, model: Module) -> Module:
         from torch.distributed.fsdp import FullyShardedDataParallel

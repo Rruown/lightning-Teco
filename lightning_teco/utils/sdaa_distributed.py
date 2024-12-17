@@ -22,7 +22,7 @@ from lightning_lite.utilities.types import ReduceOp
 
 from typing import Any, Optional, Union
 
-# Supported ReduceOps: https://docs.teco.ai/en/latest/API_Reference_Guides/HCCL_APIs/C_API.html#hcclredop-t
+# Supported ReduceOps: https://docs.teco.ai/en/latest/API_Reference_Guides/HCCL_APIs/C_API.html#tcclredop-t
 supported_reduce_ops = {
     "sum": ReduceOp.SUM,
     "min": ReduceOp.MIN,
@@ -34,12 +34,12 @@ def _distributed_available() -> bool:
     return (
         torch.distributed.is_available()
         and torch.distributed.is_initialized()
-        and torch.distributed.get_backend() == "hccl"
+        and torch.distributed.get_backend() == "tccl"
     )
 
 
 def _is_reduce_op_supported(reduce_op: Union[ReduceOp, str]) -> bool:
-    """Function to check if reduce_op is supported with hccl backend."""
+    """Function to check if reduce_op is supported with tccl backend."""
     reduce_op = reduce_op.lower() if isinstance(reduce_op, str) else reduce_op
     if reduce_op in ("mean", "avg") or reduce_op == ReduceOp.AVG:
         rank_zero_warn(

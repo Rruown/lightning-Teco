@@ -46,7 +46,7 @@ if _SDAA_AVAILABLE:
 
 _SDAA_DEEPSPEED_AVAILABLE = (
     # SDAA deep speed is supported only through this pip install git+https://github.com/HabanaAI/DeepSpeed.git@1.18.0
-    RequirementCache("deepspeed==0.14.4+hpu.synapse.v1.18.0")
+    RequirementCache("deepspeed==0.14.4+sdaa.synapse.v1.18.0")
 )
 if _SDAA_DEEPSPEED_AVAILABLE:
     import deepspeed
@@ -71,11 +71,11 @@ class SDAADeepSpeedPrecisionPlugin(SDAAPrecisionPlugin):
     def __init__(
         self,
         precision: _PRECISION_INPUT = "32-true",
-        device: str = "hpu",
+        device: str = "sdaa",
     ) -> None:
         if not _SDAA_DEEPSPEED_AVAILABLE:
             raise MisconfigurationException(
-                "To use the `SDAADeepSpeedPrecisionPlugin`, you must have hpu DeepSpeed installed."
+                "To use the `SDAADeepSpeedPrecisionPlugin`, you must have sdaa DeepSpeed installed."
                 " Install it by running `pip install git+https://github.com/HabanaAI/DeepSpeed.git@1.18.0`."
             )
         super().__init__(device=device, precision=precision)
@@ -143,7 +143,7 @@ class SDAADeepSpeedPrecisionPlugin(SDAAPrecisionPlugin):
         fp8_data_path: Optional[str] = None,
     ) -> None:
         """Enable fp8 inference."""
-        htcore.hpu_set_env()
+        htcore.sdaa_set_env()
         self.quant = quant
         self.fp8_data_path = fp8_data_path
 

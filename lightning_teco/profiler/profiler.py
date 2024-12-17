@@ -100,13 +100,6 @@ class SDAAProfiler(PyTorchProfiler):
         self.profiler: Optional[_PROFILER] = None
         self._profiler_kwargs["activities"] = self.profile_sdaa_activities(
             self._profiler_kwargs.get("activities", None))
-        # assert self._activities_patched(
-        #     self._profiler_kwargs["activities"]
-        # ), "lightning_teco should be imported before lightning to use SDAAProfiler."
-
-    def _activities_patched(self, activities: List["ProfilerActivity"]) -> bool:
-        """Checks ProfilerActivity is patched by teco_frameworks."""
-        return all(not isinstance(activity, torch._C._profiler.ProfilerActivity) for activity in activities)
 
     # type: ignore
     def profile_sdaa_activities(self, activities) -> List["ProfilerActivity"]:

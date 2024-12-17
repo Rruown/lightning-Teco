@@ -48,7 +48,7 @@ class SDAAFSDPPrecision(FSDPPrecision, SDAAPrecisionPlugin):
     def __init__(
         self,
         precision: _PRECISION_INPUT,
-        device: str = "hpu",
+        device: str = "sdaa",
         recipe: Optional[Union[Mapping[str, Any], "DelayedScaling"]] = None,
         replace_layers: bool = False,
     ) -> None:
@@ -63,7 +63,7 @@ class SDAAFSDPPrecision(FSDPPrecision, SDAAPrecisionPlugin):
     def autocast_context_manager(self) -> Union[ContextManager[Any], torch.autocast]:
         """Return Autocast context manager."""
         if "mixed" in self.precision:
-            return torch.autocast(device_type="hpu", dtype=torch.bfloat16, enabled=True)
+            return torch.autocast(device_type="sdaa", dtype=torch.bfloat16, enabled=True)
         return _DtypeContextManager(self._desired_input_dtype)
 
     @contextmanager

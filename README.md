@@ -32,6 +32,13 @@ trainer = Trainer(accelerator=SDAAAccelerator(), devices=8)
 # Choose the number of devices automatically.
 trainer = Trainer(accelerator=SDAAAccelerator(), devices="auto")
 ```
+or use 'sdaa' afther imported lightning_teco
+```Python
+from lightning import Trainer
+import lightning_teco
+# Run on one SDAA with ddp (find_unused_parameters=False).
+trainer = Trainer(accelerator='sdaa', devices=4, strategy='ddp_sdaa_find_unused_parameters_false')
+```
 
 The `devices=1` parameter with SDAAs enables the Teco accelerator for single card training using `SingleSDAAStrategy`.
 

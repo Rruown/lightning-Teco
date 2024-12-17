@@ -30,7 +30,7 @@ from lightning_teco.strategies.ddp import SDAADDPStrategy
 # from lightning_teco.strategies.single import SingleSDAAStrategy
 from lightning_teco.__about__ import __min_required_version__
 from lightning_teco.utils.imports import _SDAA_AVAILABLE
-from lightning_teco.register import plugin_register
+from lightning_teco.register import *
 
 if compare_version("lightning", operator.lt, __min_required_version__) and compare_version("pytorch_lightning", operator.lt, __min_required_version__):
     raise ImportError(

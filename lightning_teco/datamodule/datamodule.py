@@ -107,7 +107,7 @@ def load_data(traindir, valdir, train_transforms, val_transforms):  # type: igno
 class SDAADataModule(LightningDataModule):
     """Datamodule helper class to load the right media pipe."""
 
-    name = "hpu-dataset"
+    name = "sdaa-dataset"
 
     def __init__(
         self,

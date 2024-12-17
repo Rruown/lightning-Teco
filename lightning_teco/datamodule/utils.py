@@ -15,7 +15,7 @@
 from lightning_teco.utils.imports import _SDAA_AVAILABLE
 
 if _SDAA_AVAILABLE:
-    import habana_frameworks.torch.hpu as torch_hpu
+    import habana_frameworks.torch.sdaa as torch_sdaa
 
 import torch.distributed as dist
 
@@ -48,12 +48,12 @@ def is_main_process() -> bool:
 
 def is_gaudi() -> bool:
     """Check if device is of Gaudi type."""
-    return torch_hpu.get_device_name() == "GAUDI"
+    return torch_sdaa.get_device_name() == "GAUDI"
 
 
 def is_gaudi2() -> bool:
     """Check if device is of Gaudi2  type."""
-    return torch_hpu.get_device_name() == "GAUDI2"
+    return torch_sdaa.get_device_name() == "GAUDI2"
 
 
 def get_device_string() -> str:

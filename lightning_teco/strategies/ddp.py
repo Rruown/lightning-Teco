@@ -84,6 +84,12 @@ class SDAADDPStrategy(DDPStrategy):
     @classmethod
     def register_strategies(cls, strategy_registry: Dict) -> None:
         strategy_registry.register(
+            "ddp_sdaa_find_unused_parameters_false",
+            cls,
+            description="SDAA DDP Strategy with `find_unused_parameters` as False",
+            find_unused_parameters=False,
+        )
+        strategy_registry.register(
             cls.strategy_name,
             cls,
             description=f"{cls.__class__.__name__}",

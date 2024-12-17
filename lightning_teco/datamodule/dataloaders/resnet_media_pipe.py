@@ -62,7 +62,7 @@ if _SDAA_AVAILABLE:
             queue_depth: Number of preloaded image batches for every slice in mediapipe. <1/2/3>
             num_instances: number of devices.
             instance_id: instance id of current device.
-            device: media device to run mediapipe on. <hpu/hpu:0>
+            device: media device to run mediapipe on. <sdaa/sdaa:0>
 
         """
 

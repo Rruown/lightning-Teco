@@ -76,7 +76,7 @@ from lightning_teco.strategies.ddp import SDAADDPStrategy
 from lightning_teco.utils.imports import _SDAA_AVAILABLE, _SDAA_SYNAPSE_GREATER_EQUAL_1_17_0
 
 if _SDAA_AVAILABLE:
-    import habana_frameworks.torch.distributed.hccl  # noqa: F401
+    import habana_frameworks.torch.distributed.tccl  # noqa: F401
 
     if _SDAA_SYNAPSE_GREATER_EQUAL_1_17_0:
         from neural_compressor.torch.quantization import finalize_calibration
@@ -87,7 +87,7 @@ warning_cache = WarningCache()
 
 _SDAA_DEEPSPEED_AVAILABLE = (
     # SDAA deep speed is supported only through this pip install git+https://github.com/HabanaAI/DeepSpeed.git@1.18.0
-    RequirementCache("deepspeed==0.14.4+hpu.synapse.v1.18.0")
+    RequirementCache("deepspeed==0.14.4+sdaa.synapse.v1.18.0")
 )
 if TYPE_CHECKING and _SDAA_DEEPSPEED_AVAILABLE:
     import deepspeed
@@ -108,7 +108,7 @@ def remove_module_hooks(model: torch.nn.Module) -> None:
 class SDAADeepSpeedStrategy(SDAADDPStrategy):
     """Strategy to support deepspeed with SDAA devices."""
 
-    strategy_name = "hpu_deepspeed"
+    strategy_name = "sdaa_deepspeed"
     DEEPSPEED_ENV_VAR = "PL_DEEPSPEED_CONFIG_PATH"
 
     def __init__(
@@ -156,7 +156,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
         synchronize_checkpoint_boundary: bool = False,
         load_full_weights: bool = False,
         precision_plugin: Optional[PrecisionPlugin] = None,
-        process_group_backend: Optional[str] = "hccl",
+        process_group_backend: Optional[str] = "tccl",
         **kwargs: Any,
     ) -> None:
         """Provides capabilities to run training using the DeepSpeed library.
@@ -216,7 +216,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
                 Intra-request parallelism for each read/write submitted by a user thread.
 
             pin_memory: When using ZeRO stage 3, pin optimizer state memory on CPU.
-                This could boost throughput at the cost of extra memory overhead.
+                This could boost througsdaat at the cost of extra memory overhead.
 
             sub_group_size: When using ZeRO stage 3, defines the number of parameters
                 within a sub group to offload at a time.
@@ -281,7 +281,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
             contiguous_memory_optimization: Copies partitioned activations so that they are contiguous in memory.
                 Not supported by all models.
 
-            synchronize_checkpoint_boundary: Insert :func:`hpu.synchronize` at each checkpoint boundary.
+            synchronize_checkpoint_boundary: Insert :func:`sdaa.synchronize` at each checkpoint boundary.
 
             load_full_weights: True when loading a single checkpoint file containing the model state dict
                 when using ZeRO Stage 3. This differs from the DeepSpeed checkpoint which contains shards
@@ -289,7 +289,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
 
             precision_plugin: precision_plugin
 
-            process_group_backend: hccl backend to be used
+            process_group_backend: tccl backend to be used
 
             kwargs: Additional arguments that will be passed to the :func:`deepspeed.init_inference`
 
@@ -301,7 +301,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
 
         if not _SDAA_DEEPSPEED_AVAILABLE:
             raise MisconfigurationException(
-                "To use the `SDAADeepSpeedStrategy`, you must have hpu DeepSpeed installed."
+                "To use the `SDAADeepSpeedStrategy`, you must have sdaa DeepSpeed installed."
                 " Install it by running `pip install git+https://github.com/HabanaAI/DeepSpeed.git@1.18.0`."
             )
 
@@ -445,7 +445,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
                 f" Got {len(optimizers)} optimizers instead."
             )
 
-        # train_micro_batch_size_per_gpu is used for throughput logging purposes
+        # train_micro_batch_size_per_gpu is used for througsdaat logging purposes
         # normally we set this to the batch size, but it is not available here unless the user provides it
         # as part of the config
         assert self.config is not None
@@ -469,7 +469,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
 
         model_parameters = filter(lambda p: p.requires_grad, model.parameters())
         deepspeed_engine, deepspeed_optimizer, _, _ = deepspeed.initialize(
-            args=argparse.Namespace(use_hpu=True),
+            args=argparse.Namespace(use_sdaa=True),
             config=self.config,
             model=model,
             model_parameters=model_parameters,
@@ -613,7 +613,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
             }
             model = deepspeed.init_inference(model=model, config=inference_config, **self.kwargs)
         else:
-            # todo: this is required for DeepSpeed throughput timers
+            # todo: this is required for DeepSpeed througsdaat timers
             inference_config = {"train_micro_batch_size_per_gpu": 1}
             if "bf16" in self.config:
                 inference_config.update({"bf16": self.config["bf16"]})
@@ -626,7 +626,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
                 )
 
             model, _, _, _ = deepspeed.initialize(
-                args=argparse.Namespace(use_hpu=True),
+                args=argparse.Namespace(use_sdaa=True),
                 config=inference_config,
                 model=model,
                 optimizer=None,
@@ -642,7 +642,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
                 self.model.trainer.precision_plugin.fp8_data_path,
             )
 
-        model = model.to("hpu")
+        model = model.to("sdaa")
         self.model = model
 
     @property
@@ -715,7 +715,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
     def _auto_select_batch_size(self) -> int:
         import deepspeed
 
-        # train_micro_batch_size_per_gpu is used for throughput logging purposes
+        # train_micro_batch_size_per_gpu is used for througsdaat logging purposes
         # by default we try to use the batch size of the loader
         assert self.lightning_module is not None
         batch_size = 1
@@ -954,23 +954,23 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
 
     @classmethod
     def register_strategies(cls, strategy_registry: _StrategyRegistry) -> None:
-        strategy_registry.register("hpu_deepspeed", cls, description="Default DeepSpeed Strategy")
+        strategy_registry.register("sdaa_deepspeed", cls, description="Default DeepSpeed Strategy")
         strategy_registry.register(
-            "hpu_deepspeed_stage_1", cls, description="DeepSpeed with ZeRO Stage 1 enabled", stage=1
+            "sdaa_deepspeed_stage_1", cls, description="DeepSpeed with ZeRO Stage 1 enabled", stage=1
         )
         strategy_registry.register(
-            "hpu_deepspeed_stage_2", cls, description="DeepSpeed with ZeRO Stage 2 enabled", stage=2
+            "sdaa_deepspeed_stage_2", cls, description="DeepSpeed with ZeRO Stage 2 enabled", stage=2
         )
         strategy_registry.register(
-            "hpu_deepspeed_stage_2_offload",
+            "sdaa_deepspeed_stage_2_offload",
             cls,
             description="DeepSpeed ZeRO Stage 2 and CPU Offload",
             stage=2,
             offload_optimizer=True,
         )
-        strategy_registry.register("hpu_deepspeed_stage_3", cls, description="DeepSpeed ZeRO Stage 3", stage=3)
+        strategy_registry.register("sdaa_deepspeed_stage_3", cls, description="DeepSpeed ZeRO Stage 3", stage=3)
         strategy_registry.register(
-            "hpu_deepspeed_stage_3_offload",
+            "sdaa_deepspeed_stage_3_offload",
             cls,
             description="DeepSpeed ZeRO Stage 3 and CPU Offload",
             stage=3,
@@ -978,7 +978,7 @@ class SDAADeepSpeedStrategy(SDAADDPStrategy):
             offload_parameters=True,
         )
         strategy_registry.register(
-            "hpu_deepspeed_stage_3_offload_nvme",
+            "sdaa_deepspeed_stage_3_offload_nvme",
             cls,
             description="DeepSpeed ZeRO Stage 3 and NVMe Offload",
             stage=3,

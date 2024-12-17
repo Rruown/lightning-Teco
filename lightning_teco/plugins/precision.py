@@ -81,12 +81,12 @@ class SDAAPrecisionPlugin(Precision):
     def __init__(
         self,
         precision: _PRECISION_INPUT = "32-true",
-        device: str = "hpu",
+        device: str = "sdaa",
     ) -> None:
         supported_precision = get_args(_PRECISION_INPUT)
         if precision not in supported_precision:
             raise ValueError(
-                f"`Trainer(accelerator='hpu', precision={precision!r})` is not supported."
+                f"`Trainer(accelerator='sdaa', precision={precision!r})` is not supported."
                 f" `precision` must be one of: {supported_precision}."
             )
         self.device = device
@@ -158,7 +158,7 @@ class SDAAPrecisionPlugin(Precision):
         This module cannot be used to run trainer.fit.
 
         """
-        htcore.hpu_set_env()
+        htcore.sdaa_set_env()
         self._setup_fp8_inference_modules(module, quant, fp8_data_path)
 
     def _setup_fp8_inference_modules(
@@ -172,7 +172,7 @@ class SDAAPrecisionPlugin(Precision):
 
         config: FP8Config = self._setup_fp8_inference_config(quant, fp8_data_path)
         module = prepare(module, config) if config.measure else convert(module, config)
-        htcore.hpu_initialize(module, mark_only_scales_as_const=True)
+        htcore.sdaa_initialize(module, mark_only_scales_as_const=True)
 
     def _enable_fp8_training(
         self,
@@ -240,7 +240,7 @@ class SDAAPrecisionPlugin(Precision):
         """Return Autocast context manager."""
         if self.fp8_training_available:
             return tengine.fp8_autocast(enabled=True, fp8_recipe=self.recipe)
-        return torch.autocast(device_type="hpu", dtype=_AMP_DICT[self.precision], enabled=True)
+        return torch.autocast(device_type="sdaa", dtype=_AMP_DICT[self.precision], enabled=True)
 
     @contextmanager
     def forward_context(self) -> Generator[None, None, None]:
