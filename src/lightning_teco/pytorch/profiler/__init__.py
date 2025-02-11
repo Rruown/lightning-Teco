@@ -24,6 +24,6 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 # OF SUCH DAMAGE.
 
-from lightning_teco.profiler.profiler import SDAAProfiler
+from .profiler import SDAAProfiler
 
 __all__ = ["SDAAProfiler"]

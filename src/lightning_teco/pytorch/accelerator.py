@@ -28,18 +28,10 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from lightning_utilities import module_available
-
 import pytorch_lightning as pl
-from lightning_teco.utils.imports import _SDAA_AVAILABLE
 from lightning_teco.utils.resources import _parse_sdaa_ids, num_sdaa_devices
+from lightning_teco.lightning import Accelerator, MisconfigurationException
 
-
-from pytorch_lightning.accelerators.accelerator import Accelerator
-from pytorch_lightning.utilities.exceptions import MisconfigurationException
-
-if _SDAA_AVAILABLE:
-    import torch_sdaa
 
 class SDAAAccelerator(Accelerator):
     """Accelerator for SDAA devices."""

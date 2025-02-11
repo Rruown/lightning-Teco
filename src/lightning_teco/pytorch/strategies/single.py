@@ -24,66 +24,39 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 # OF SUCH DAMAGE.
 
-import logging
-from typing import Any, Callable, Dict, List, Optional
+import torch
+from typing import Any, Callable, Dict, Optional, Union
 
-import torch.distributed
-
-import pytorch_lightning as pl
-from lightning_lite.plugins import CheckpointIO, ClusterEnvironment
-from pytorch_lightning.plugins.io.wrapper import _WrappingCheckpointIO
-from pytorch_lightning.plugins.precision import PrecisionPlugin
-from pytorch_lightning.strategies.ddp import DDPStrategy
-from pytorch_lightning.utilities.exceptions import MisconfigurationException
+from pytorch_lightning.utilities import find_shared_parameters, set_shared_parameters
 
 
-from lightning_teco.plugins.io_plugin import SDAACheckpointIO
-from lightning_teco.utils.imports import _SDAA_AVAILABLE
+from lightning_teco.lightning import CheckpointIO, Trainer, Accelerator, _WrappingCheckpointIO, PrecisionPlugin, SingleDeviceStrategy
 
-log = logging.getLogger(__name__)
+from ..plugins.io_plugin import SDAACheckpointIO
 
 
-class SDAADDPStrategy(DDPStrategy):
-    """Strategy for distributed training on multiple SDAA devices."""
+class SingleSDAAStrategy(SingleDeviceStrategy):
+    """Strategy for training on single SDAA device."""
 
-    strategy_name = "dpp_sdaa"
+    strategy_name = "single_sdaa"
 
     def __init__(
         self,
-        accelerator: Optional["pl.accelerators.Accelerator"] = None,
-        parallel_devices: Optional[List[torch.device]] = None,
-        cluster_environment: Optional[ClusterEnvironment] = None,
+        device: Union[torch.device, str, int] = "sdaa",
+        accelerator: Optional[Accelerator] = None,
         checkpoint_io: Optional[CheckpointIO] = None,
         precision_plugin: Optional[PrecisionPlugin] = None,
-        ddp_comm_state: Optional[object] = None,
-        ddp_comm_hook: Optional[Callable] = None,
-        ddp_comm_wrapper: Optional[Callable] = None,
-        model_averaging_period: Optional[int] = None,
-        process_group_backend: Optional[str] = "tccl",
-        **kwargs: Any,
-    ) -> None:
-
-        if not _SDAA_AVAILABLE:
-            raise MisconfigurationException(
-                "`SDAAParallelStrategy` requires SDAA devices to run")
-
+    ):
         super().__init__(
             accelerator=accelerator,
-            parallel_devices=parallel_devices,
-            cluster_environment=cluster_environment,
+            device=device,
             checkpoint_io=checkpoint_io,
             precision_plugin=precision_plugin,
-            ddp_comm_state=ddp_comm_state,
-            ddp_comm_hook=ddp_comm_hook,
-            ddp_comm_wrapper=ddp_comm_wrapper,
-            model_averaging_period=model_averaging_period,
-            process_group_backend=process_group_backend,
-            **kwargs,
         )
 
     @property
     def checkpoint_io(self) -> CheckpointIO:
-        if self._checkpoint_io is None:
+        if self._checkpoint_io is None:  # type: ignore[has-type]
             self._checkpoint_io = SDAACheckpointIO()
         elif isinstance(self._checkpoint_io, _WrappingCheckpointIO):
             self._checkpoint_io.checkpoint_io = SDAACheckpointIO()
@@ -92,16 +65,21 @@ class SDAADDPStrategy(DDPStrategy):
 
     @checkpoint_io.setter
     def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
-        self._checkpoint_io = io
+        self._checkpoint_io = io  # type: ignore
+
+    @property
+    def is_distributed(self) -> bool:
+        return False
+
+    def setup(self, trainer: Trainer) -> None:
+        assert self.model, "self.model must be set before find_shared_parameters(self.model)"
+        shared_params = find_shared_parameters(self.model)
+        self.model_to_device()
+        set_shared_parameters(self.model, shared_params)
+        super().setup(trainer)
 
     @classmethod
     def register_strategies(cls, strategy_registry: Dict) -> None:
-        strategy_registry.register(
-            "ddp_sdaa_find_unused_parameters_false",
-            cls,
-            description="SDAA DDP Strategy with `find_unused_parameters` as False",
-            find_unused_parameters=False,
-        )
         strategy_registry.register(
             cls.strategy_name,
             cls,

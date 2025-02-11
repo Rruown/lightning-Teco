@@ -27,9 +27,9 @@
 import pytorch_lightning as pl
 from pytorch_lightning.accelerators import AcceleratorRegistry
 from pytorch_lightning.strategies import StrategyRegistry
-from lightning_teco.accelerator import SDAAAccelerator
-from lightning_teco.strategies import SingleSDAAStrategy, SDAADDPStrategy
-from lightning_teco.profiler import SDAAProfiler
+from lightning_teco.pytorch.accelerator import SDAAAccelerator
+from lightning_teco.pytorch.strategies import SingleSDAAStrategy, SDAADDPStrategy
+from lightning_teco.pytorch.profiler import SDAAProfiler
 from lightning_teco.utils.patch import PatchModule
 from pytorch_lightning.utilities.rank_zero import rank_zero_info
 
@@ -53,7 +53,7 @@ def _patch__log_device_info(trainer: "pl.Trainer", _log_device_info):
 
 
 @PatchModule(module='pytorch_lightning.trainer.connectors.accelerator_connector',
-             dst='AcceleratorConnector._choose_strategy')
+             dst='_AcceleratorConnector._choose_strategy')
 def _patch_choose_strategy(self, _choose_strategy):
     if self._accelerator_flag == 'sdaa':
         if self._parallel_devices and len(self._parallel_devices) > 1:

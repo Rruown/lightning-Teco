@@ -26,17 +26,23 @@
 
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple, Union, MutableSequence
-from lightning_lite.plugins.environments.torchelastic import TorchElasticEnvironment
-from lightning_utilities import module_available
+from lightning_teco.lightning import TorchElasticEnvironment
 from lightning_utilities.core.imports import package_available
 
 
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
 
-_SDAA_AVAILABLE = package_available("torch_sdaa")
 
-if _SDAA_AVAILABLE:
-    import torch_sdaa
+def check_environment():
+    if package_available("torch_sdaa"):
+        import torch_sdaa
+    else:
+        raise ImportError("Please Install torch_sdaa!")
+
+    sdaa_avaliable = torch_sdaa.backend.is_available()
+    if not sdaa_avaliable:
+        raise Exception(
+            "Sdaa Device is not available, please check your environment!")
 
 
 def _parse_sdaa_ids(
@@ -165,4 +171,5 @@ def _check_unique(device_ids: List[int]) -> None:
 
 @lru_cache(1)
 def num_sdaa_devices() -> int:
+    import torch_sdaa
     return torch_sdaa.backend.device_count()

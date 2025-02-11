@@ -1,30 +1,25 @@
 #!/usr/bin/env python
 import glob
 import os
-from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 from pkg_resources import parse_requirements
-from setuptools import find_packages, setup
+from setuptools import setup, find_packages
 
 
-_MODULE_NAME = "lightning_teco"
 _PATH_ROOT = os.path.dirname(__file__)
-_PATH_REQUIRES = _PATH_ROOT
+
+__version__ = "1.8.6"
+__author__ = "Tecorigin"
+__author_email__ = "hz@tecorigin.com"
+__license__ = "BSD 3-clause"
+__copyright__ = f"Copyright (c) 2020-2024, {__author__}."
+__homepage__ = "https://github.com/Lightning-AI/lightning-teco"
+__docs__ = "Lightning support for tecorigin's sdaa accelerators"
+__min_required_version__ = __version__
 
 
-def _load_py_module(fname, pkg=_MODULE_NAME):
-    spec = spec_from_file_location(os.path.join(
-        pkg, fname), os.path.join(_PATH_ROOT, pkg, fname))
-    py = module_from_spec(spec)
-    spec.loader.exec_module(py)
-    return py
-
-
-about = _load_py_module('__about__.py')
-
-
-def _load_requirements(path_dir: str = _PATH_REQUIRES, file_name: str = "requirements.txt") -> list:
+def _load_requirements(path_dir: str = _PATH_ROOT, file_name: str = "requirements.txt") -> list:
     reqs = parse_requirements(
         open(os.path.join(path_dir, file_name)).readlines())
     return list(map(str, reqs))
@@ -34,7 +29,7 @@ with open(os.path.join(_PATH_ROOT, "README.md"), encoding="utf-8") as fopen:
     readme = fopen.read()
 
 
-def _prepare_extras(requirements_dir: str = _PATH_REQUIRES) -> dict:
+def _prepare_extras(requirements_dir: str = _PATH_ROOT) -> dict:
     req_files = [Path(p) for p in glob.glob(
         os.path.join(requirements_dir, "*.txt"))]
     extras = {
@@ -50,13 +45,15 @@ def _prepare_extras(requirements_dir: str = _PATH_REQUIRES) -> dict:
 
 setup(
     name="lightning-teco",
-    version=about.__version__,
-    description=about.__docs__,
-    author=about.__author__,
-    author_email=about.__author_email__,
-    url=about.__homepage__,
-    download_url="https://github.com/Lightning-AI/lightning-teco",
-    license=about.__license__,
+    version=__version__,
+    description=__docs__,
+    author=__author__,
+    author_email=__author_email__,
+    url=__homepage__,
+    packages=find_packages(where='src'),
+    package_dir={"": "src"},
+    download_url="https://github.com/Rruown/lightning-Teco.git",
+    license=__license__,
     long_description=readme,
     long_description_content_type="text/markdown",
     keywords=["deep learning", "pytorch", "AI"],

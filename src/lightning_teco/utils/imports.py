@@ -25,42 +25,13 @@
 # OF SUCH DAMAGE.
 
 
-import os
-from typing import Any, Dict, Optional, Union
+import operator
 
 import torch
-from pathlib import Path
+from lightning_utilities.core.imports import RequirementCache, compare_version
+from packaging.version import Version
 
-from pytorch_lightning.plugins import TorchCheckpointIO
-from pytorch_lightning.utilities import move_data_to_device
-from pytorch_lightning.utilities.cloud_io import atomic_save, get_filesystem
+from lightning_teco.utils.resources import check_environment
 
-
-class SDAACheckpointIO(TorchCheckpointIO):
-    """CheckpointIO to save checkpoints for SDAA training strategies."""
-
-    def save_checkpoint(self, checkpoint: Dict[str, Any], path: Union[str, Path], storage_options: Optional[Any] = None) -> None:
-        """Save model/training states as a checkpoint file through state-dump and file-write.
-
-        Args:
-            checkpoint: dict containing model and trainer state
-            path: write-target path
-            storage_options: not used in ``XLACheckpointIO.save_checkpoint``
-
-        Raises:
-            TypeError:
-                If ``storage_options`` arg is passed in
-
-        """
-        if storage_options is not None:
-            raise TypeError(
-                "`Trainer.save_checkpoint(..., storage_options=...)` with `storage_options` arg"
-                f" is not supported for `{self.__class__.__name__}`. Please implement your custom `CheckpointIO`"
-                " to define how you'd like to use `storage_options`."
-            )
-        fs = get_filesystem(path)
-        fs.makedirs(os.path.dirname(path), exist_ok=True)
-
-        checkpoint = move_data_to_device(checkpoint, torch.device("cpu"))
-        # write the checkpoint dictionary to the provided path
-        atomic_save(checkpoint, path)
+_TORCHVISION_AVAILABLE = RequirementCache("torchvision")
+_KINETO_AVAILABLE = torch.profiler.kineto_available()

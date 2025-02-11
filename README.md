@@ -5,7 +5,7 @@
 To install Lightning Teco, run the following command:
 
 ```bash
-pip install git+http://10.10.30.109/huangzhen/lightning-teco.git
+python setup.py install
 ```
 
 ______________________________________________________________________

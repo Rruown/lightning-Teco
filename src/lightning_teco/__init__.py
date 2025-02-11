@@ -24,9 +24,29 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 # OF SUCH DAMAGE.
 
-from lightning_teco.strategies.single import SingleSDAAStrategy
-from lightning_teco.strategies.ddp import SDAADDPStrategy
 
+from lightning_teco.pytorch.accelerator import SDAAAccelerator
+from lightning_teco.pytorch.plugins.fsdp_precision import SDAAFSDPPrecision
+from lightning_teco.pytorch.plugins.io_plugin import SDAACheckpointIO
+from lightning_teco.pytorch.plugins.precision import SDAAPrecisionPlugin
+from lightning_teco.pytorch.profiler import SDAAProfiler
+from lightning_teco.pytorch.strategies.fsdp import SDAAFSDPStrategy
+from lightning_teco.pytorch.strategies.ddp import SDAADDPStrategy
+from lightning_teco.pytorch.strategies.single import SingleSDAAStrategy
+from lightning_teco.utils.imports import check_environment
+from lightning_teco.register import *
 
-__all__ = ["SDAAFSDPStrategy", "SDAADDPStrategy",
-           "SDAADeepSpeedStrategy", "SDAAParallelStrategy", "SingleSDAAStrategy"]
+check_environment()
+plugin_register()
+
+__all__ = [
+    "SDAAAccelerator",
+    "SDAADDPStrategy",
+    "SDAAProfiler",
+    "SDAAFSDPStrategy",
+    "SingleSDAAStrategy",
+    "SDAAPrecisionPlugin",
+    "SDAACheckpointIO",
+    "SDAAProfiler",
+    "SDAAFSDPPrecision",
+]
