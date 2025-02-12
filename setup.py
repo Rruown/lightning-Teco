@@ -14,7 +14,7 @@ __author__ = "Tecorigin"
 __author_email__ = "hz@tecorigin.com"
 __license__ = "BSD 3-clause"
 __copyright__ = f"Copyright (c) 2020-2024, {__author__}."
-__homepage__ = "https://github.com/Lightning-AI/lightning-teco"
+__homepage__ = "https://github.com/Rruown/lightning-Teco.git"
 __docs__ = "Lightning support for tecorigin's sdaa accelerators"
 __min_required_version__ = __version__
 

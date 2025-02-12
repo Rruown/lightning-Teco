@@ -30,7 +30,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import pytorch_lightning as pl
 from lightning_teco.utils.resources import _parse_sdaa_ids, num_sdaa_devices
-from lightning_teco.lightning import Accelerator, MisconfigurationException
+from lightning_teco.lightning_api import Accelerator, MisconfigurationException
 
 
 class SDAAAccelerator(Accelerator):

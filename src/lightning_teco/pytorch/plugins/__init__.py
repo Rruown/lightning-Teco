@@ -28,5 +28,7 @@
 from .io_plugin import SDAACheckpointIO
 from .precision import SDAAPrecisionPlugin
 from .fsdp_precision import SDAAFSDPPrecision
+from .deepspeed_precision import SDAADeepSpeedPrecisionPlugin
 
-__all__ = ["SDAACheckpointIO", "SDAAPrecisionPlugin", "SDAAFSDPPrecision"]
+__all__ = ["SDAACheckpointIO", "SDAAPrecisionPlugin",
+           "SDAAFSDPPrecision", "SDAADeepSpeedPrecisionPlugin"]

@@ -26,7 +26,7 @@
 
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple, Union, MutableSequence
-from lightning_teco.lightning import TorchElasticEnvironment
+from lightning_teco.lightning_api import TorchElasticEnvironment
 from lightning_utilities.core.imports import package_available
 
 

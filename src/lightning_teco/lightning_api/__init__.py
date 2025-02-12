@@ -24,7 +24,20 @@ if module_available('pytorch_lightning'):
                                         _move_torchmetrics_to_device,
                                         FSDPStrategy,
                                         _setup_activation_checkpointing,
-                                        _has_meta_device_parameters_or_buffers)
+                                        _has_meta_device_parameters_or_buffers,
+                                        _format_precision_config,
+                                        _validate_checkpoint_directory,
+                                        _optimizers_to_device,
+                                        reset_seed,
+                                        _PATH,
+                                        LightningModule,
+                                        _init_optimizers_and_lr_schedulers,
+                                        TrainerFn,
+                                        GradClipAlgorithmType,
+                                        is_overridden,
+                                        WarningCache,
+                                        LRSchedulerConfig,
+                                        Steppable)
 elif module_available('lightning'):
     from ._lightning_api import (_DEVICE,
                                  ReduceOp,

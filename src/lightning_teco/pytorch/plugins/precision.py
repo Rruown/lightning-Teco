@@ -32,7 +32,7 @@ import torch
 from typing_extensions import get_args
 
 
-from lightning_teco.lightning import PrecisionPlugin, rank_zero_info
+from lightning_teco.lightning_api import PrecisionPlugin, rank_zero_info
 
 _PRECISION_INPUT = Literal["32", "32-true",
                            "bf16", "bf16-mixed", "16-mixed",
@@ -89,25 +89,3 @@ class SDAAPrecisionPlugin(PrecisionPlugin):
         """Enable autocast context."""
         with self.autocast_context_manager():
             yield
-
-
-def _replace_layers(module: torch.nn.Module) -> None:
-    """Replace layers with Transformer engine equivalent layers.
-
-    Args: torch.nn.Module.
-    Return: transformer engine equivalent of torch.nn.Module.
-    List of supported modules: https://docs.habana.ai/en/latest/PyTorch/PyTorch_FP8_Training/index.html
-
-    Eg. torch.nn.Linear -> transformer_engine.Linear
-
-    """
-    for name, child in module.named_children():
-        if isinstance(child, torch.nn.Linear):
-            has_bias = child.bias is not None
-            replacement = tengine.Linear(
-                child.in_features, child.out_features, bias=has_bias)
-            rank_zero_info(
-                f"Replacing layer {name} with transformer engine equivalent")
-            module.__setattr__(name, replacement)
-        else:
-            _replace_layers(child)

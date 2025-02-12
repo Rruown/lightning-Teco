@@ -24,6 +24,7 @@ from lightning_teco.pytorch.plugins.io_plugin import SDAACheckpointIO
 from lightning_teco.pytorch.strategies import SDAADDPStrategy
 
 
+@pytest.mark.standalone()
 def test_sdaa_ddp_strategy_init():
     bucket_cap_mb = 100
     gradient_as_bucket_view = True
@@ -49,6 +50,7 @@ def test_sdaa_ddp_strategy_init():
     assert strategy._ddp_kwargs["find_unused_parameters"] == find_unused_parameters
 
 
+@pytest.mark.standalone()
 def test_sdaa_ddp_strategy_device_not_sdaa(tmpdir):
     """Tests sdaa required with SDAADDPStrategy."""
     trainer = Trainer(
@@ -58,6 +60,7 @@ def test_sdaa_ddp_strategy_device_not_sdaa(tmpdir):
         trainer.fit(BoringModel())
 
 
+@pytest.mark.standalone()
 def test_sdaa_ddp_custom_strategy_registry():
     """Test custom parallel strategy registry."""
 
@@ -87,6 +90,7 @@ def test_sdaa_ddp_custom_strategy_registry():
     assert trainer.strategy.strategy_name == "custom_sdaa_ddp"
 
 
+@pytest.mark.standalone()
 def test_sdaa_ddp_tensor_init_context():
     """Test that the module under the init-context gets moved to the right device."""
     strategy = SDAADDPStrategy(parallel_devices=[torch.device(
@@ -161,19 +165,3 @@ def test_sdaa_ddp_reduce(tmpdir, arg_sdaas, reduce_op):
     )
     trainer.fit(_model)
     assert expected_value.item() == _model.reduced_value.item()
-
-
-# def test_sdaa_ddp_setup_distributed():
-#     """Tests setup_distributed is called from SDAADDPStrategy exactly once and not from SDAAParallelStrategy."""
-#     with patch.object(SDAAParallelStrategy, "setup_distributed") as parallel_setup_distributed, patch.object(
-#         SDAADDPStrategy, "setup_distributed"
-#     ) as ddp_setup_distributed:
-#         strategy = SDAADDPStrategy(
-#             accelerator=SDAAAccelerator(),
-#             parallel_devices=[torch.device("sdaa")],
-#             cluster_environment=LightningEnvironment(),
-#         )
-#         strategy.setup_distributed()
-
-#         parallel_setup_distributed.assert_not_called()
-#         ddp_setup_distributed.assert_called_once()

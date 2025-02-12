@@ -33,7 +33,7 @@ import torch
 from typing_extensions import get_args
 
 
-from lightning_teco.lightning import FSDPPrecision
+from lightning_teco.lightning_api import FSDPPrecision
 
 from lightning_teco.pytorch.plugins.precision import _PRECISION_INPUT, SDAAPrecisionPlugin
 

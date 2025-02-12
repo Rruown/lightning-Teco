@@ -31,7 +31,7 @@ from typing import Any, Dict, Optional, Union
 import torch
 from pathlib import Path
 
-from lightning_teco.lightning import TorchCheckpointIO, move_data_to_device, atomic_save, get_filesystem
+from lightning_teco.lightning_api import TorchCheckpointIO, move_data_to_device, atomic_save, get_filesystem
 
 
 class SDAACheckpointIO(TorchCheckpointIO):

@@ -27,5 +27,7 @@
 from .ddp import SDAADDPStrategy
 from .single import SingleSDAAStrategy
 from .fsdp import SDAAFSDPStrategy
+from .deepspeed import SDAADeepSpeedStrategy
 
-__all__ = ["SingleSDAAStrategy", "SDAADDPStrategy", "SDAAFSDPStrategy"]
+__all__ = ["SingleSDAAStrategy", "SDAADDPStrategy",
+           "SDAAFSDPStrategy", "SDAADeepSpeedStrategy"]

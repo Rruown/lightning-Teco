@@ -30,7 +30,7 @@ from typing import Any, Callable, Dict, Optional, Union
 from pytorch_lightning.utilities import find_shared_parameters, set_shared_parameters
 
 
-from lightning_teco.lightning import CheckpointIO, Trainer, Accelerator, _WrappingCheckpointIO, PrecisionPlugin, SingleDeviceStrategy
+from lightning_teco.lightning_api import CheckpointIO, Trainer, Accelerator, _WrappingCheckpointIO, PrecisionPlugin, SingleDeviceStrategy
 
 from ..plugins.io_plugin import SDAACheckpointIO
 

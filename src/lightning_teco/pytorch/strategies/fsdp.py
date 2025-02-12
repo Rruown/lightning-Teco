@@ -35,19 +35,19 @@ from torch import Tensor
 from torch.nn import Module
 from typing_extensions import override
 
-from lightning_teco.lightning import (CheckpointIO,
-                                      _WrappingCheckpointIO,
-                                      ClusterEnvironment,
-                                      default_pg_timeout,
-                                      _StrategyRegistry,
-                                      _move_torchmetrics_to_device,
-                                      _setup_activation_checkpointing,
-                                      _has_meta_device_parameters_or_buffers,
-                                      ReduceOp,
-                                      PrecisionPlugin,
-                                      FSDPStrategy,
-                                      rank_zero_warn
-                                      )
+from lightning_teco.lightning_api import (CheckpointIO,
+                                          _WrappingCheckpointIO,
+                                          ClusterEnvironment,
+                                          default_pg_timeout,
+                                          _StrategyRegistry,
+                                          _move_torchmetrics_to_device,
+                                          _setup_activation_checkpointing,
+                                          _has_meta_device_parameters_or_buffers,
+                                          ReduceOp,
+                                          PrecisionPlugin,
+                                          FSDPStrategy,
+                                          rank_zero_warn
+                                          )
 
 from lightning_teco.pytorch.plugins.fsdp_precision import SDAAFSDPPrecision
 from lightning_teco.pytorch.plugins.io_plugin import SDAACheckpointIO
@@ -141,7 +141,6 @@ class SDAAFSDPStrategy(FSDPStrategy):
                 f"The FSDP strategy can only work with the `SDAAFSDPPrecision` plugin, found {precision_plugin}"
             )
         self._precision_plugin = precision_plugin
-
 
     @property
     def checkpoint_io(self) -> CheckpointIO:

@@ -14,9 +14,10 @@
 
 import torch
 from torch import Tensor
+import torch.distributed
 
 
-from lightning_teco.lightning import _sync_ddp, rank_zero_info, ReduceOp
+from lightning_teco.lightning_api import _sync_ddp, rank_zero_info, ReduceOp
 
 from typing import Any, Optional, Union
 
@@ -63,7 +64,6 @@ def _sync_sdaa(result: Tensor, group: Optional[Any] = None, reduce_op: Optional[
         The reduced value.
 
     """
-    # Simulate mean using sum
     reduce_op = reduce_op.lower() if isinstance(reduce_op, str) else reduce_op
     op = "sum" if (reduce_op == ReduceOp.AVG or reduce_op in (
         "mean", "avg")) else reduce_op
@@ -73,13 +73,5 @@ def _sync_sdaa(result: Tensor, group: Optional[Any] = None, reduce_op: Optional[
         # Compute mean from sum
         group = torch.distributed.group.WORLD if group is None else group
         world_size = torch.distributed.get_world_size(group)
-
-        # HPU doesn't support Long types, forcefully set it to float
-        if result.type() in (
-            "torch.LongTensor",
-            "torch.sdaa.LongTensor",
-        ):
-            rank_zero_info("Long tensor unsupported on HPU, casting to float")
-            result = result.float()
         return result.div_(world_size)
     return result

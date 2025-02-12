@@ -17,6 +17,14 @@ if compare_version("pytorch_lightning", operator.gt, "1.8.6"):
         _setup_activation_checkpointing,
     )
     from lightning_fabric.utilities.init import _has_meta_device_parameters_or_buffers
+
+    from lightning_fabric.strategies.deepspeed import (
+        _format_precision_config,
+        _validate_checkpoint_directory,
+    )
+    from lightning_fabric.utilities.optimizer import _optimizers_to_device
+    from lightning_fabric.utilities.seed import reset_seed
+    from lightning_fabric.utilities.types import _PATH, Steppable
 else:
     from lightning_lite.utilities.types import _DEVICE, ReduceOp
     from lightning_lite.plugins import CheckpointIO, ClusterEnvironment, TorchCheckpointIO
@@ -33,6 +41,13 @@ else:
         _setup_activation_checkpointing,
     )
     from lightning_lite.utilities.init import _has_meta_device_parameters_or_buffers
+    from lightning_lite.strategies.deepspeed import (
+        _format_precision_config,
+        _validate_checkpoint_directory,
+    )
+    from lightning_lite.utilities.optimizer import _optimizers_to_device
+    from lightning_lite.utilities.seed import reset_seed
+    from lightning_lite.utilities.types import _PATH,Steppable
 
 from pytorch_lightning.accelerators.accelerator import Accelerator
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
@@ -40,3 +55,10 @@ from pytorch_lightning.strategies import DDPStrategy, SingleDeviceStrategy, FSDP
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins.io.wrapper import _WrappingCheckpointIO
 from pytorch_lightning.utilities import move_data_to_device
+from pytorch_lightning import LightningModule
+from pytorch_lightning.core.optimizer import _init_optimizers_and_lr_schedulers
+from pytorch_lightning.trainer.states import TrainerFn
+from pytorch_lightning.utilities import GradClipAlgorithmType
+from pytorch_lightning.utilities.model_helpers import is_overridden
+from pytorch_lightning.utilities.rank_zero import WarningCache
+from pytorch_lightning.utilities.types import LRSchedulerConfig

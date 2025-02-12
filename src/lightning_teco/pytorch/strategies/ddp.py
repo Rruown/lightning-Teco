@@ -32,17 +32,29 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from lightning_teco.utils.sdaa_distributed import _sync_sdaa_processes_if_available
 
-from lightning_teco.lightning import (CheckpointIO,
-                                      ClusterEnvironment,
-                                      _WrappingCheckpointIO,
-                                      PrecisionPlugin,
-                                      DDPStrategy,
-                                      ReduceOp,)
+from lightning_teco.lightning_api import (CheckpointIO,
+                                          ClusterEnvironment,
+                                          _WrappingCheckpointIO,
+                                          PrecisionPlugin,
+                                          DDPStrategy,
+                                          ReduceOp,)
 
 
 from ..plugins.io_plugin import SDAACheckpointIO
 
 log = logging.getLogger(__name__)
+
+
+def _parse_parallel_devices(parallel_devices: Optional[List[torch.device]]):
+    if parallel_devices is None:
+        return
+
+    result = []
+    for i, device in enumerate(parallel_devices):
+        if device.type != "sdaa":
+            raise ValueError("SDAA Strategy only support for sdaa device!")
+        result.append(torch.device(f"{device.type}:{i}"))
+    return result
 
 
 class SDAADDPStrategy(DDPStrategy):
@@ -78,6 +90,11 @@ class SDAADDPStrategy(DDPStrategy):
             process_group_backend=process_group_backend,
             **kwargs,
         )
+
+        self.parallel_devices = _parse_parallel_devices(self.parallel_devices)
+
+    def _get_process_group_backend(self):
+        return "tccl"
 
     def determine_ddp_device_ids(self) -> None:
         return None

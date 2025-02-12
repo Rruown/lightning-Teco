@@ -24,20 +24,27 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 # OF SUCH DAMAGE.
 
-
+import torch
 from lightning_teco.pytorch.accelerator import SDAAAccelerator
 from lightning_teco.pytorch.plugins.fsdp_precision import SDAAFSDPPrecision
+from lightning_teco.pytorch.plugins.deepspeed_precision import SDAADeepSpeedPrecisionPlugin
 from lightning_teco.pytorch.plugins.io_plugin import SDAACheckpointIO
 from lightning_teco.pytorch.plugins.precision import SDAAPrecisionPlugin
 from lightning_teco.pytorch.profiler import SDAAProfiler
 from lightning_teco.pytorch.strategies.fsdp import SDAAFSDPStrategy
 from lightning_teco.pytorch.strategies.ddp import SDAADDPStrategy
 from lightning_teco.pytorch.strategies.single import SingleSDAAStrategy
+from lightning_teco.pytorch.strategies.deepspeed import SDAADeepSpeedStrategy
 from lightning_teco.utils.imports import check_environment
 from lightning_teco.register import *
 
 check_environment()
 plugin_register()
+
+# patch for sw-deepseed
+import torch_sdaa
+if not hasattr(torch.sdaa, 'nvtx'):
+    setattr(torch.sdaa, 'nvtx', object())
 
 __all__ = [
     "SDAAAccelerator",
@@ -46,7 +53,10 @@ __all__ = [
     "SDAAFSDPStrategy",
     "SingleSDAAStrategy",
     "SDAAPrecisionPlugin",
+    "SDAADeepSpeedPrecisionPlugin",
     "SDAACheckpointIO",
     "SDAAProfiler",
     "SDAAFSDPPrecision",
+    "SDAADeepSpeedStrategy",
+
 ]
