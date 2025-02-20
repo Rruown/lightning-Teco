@@ -24,14 +24,16 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 # OF SUCH DAMAGE.
 
+import operator
 import pytorch_lightning as pl
 from pytorch_lightning.accelerators import AcceleratorRegistry
 from pytorch_lightning.strategies import StrategyRegistry
 from lightning_teco.pytorch.accelerator import SDAAAccelerator
-from lightning_teco.pytorch.strategies import SingleSDAAStrategy, SDAADDPStrategy
+from lightning_teco.pytorch.strategies import SingleSDAAStrategy, SDAADDPStrategy, SDAADeepSpeedStrategy, SDAAFSDPStrategy
 from lightning_teco.pytorch.profiler import SDAAProfiler
 from lightning_teco.utils.patch import PatchModule
 from pytorch_lightning.utilities.rank_zero import rank_zero_info
+from lightning_utilities import compare_version
 
 
 @PatchModule(module='pytorch_lightning.trainer.setup', dst='_init_profiler')
@@ -52,17 +54,29 @@ def _patch__log_device_info(trainer: "pl.Trainer", _log_device_info):
     rank_zero_info(f"SDAA available: {sdaa_used}, using: {num_sdaas} SDAAs")
 
 
-@PatchModule(module='pytorch_lightning.trainer.connectors.accelerator_connector',
-             dst='_AcceleratorConnector._choose_strategy')
-def _patch_choose_strategy(self, _choose_strategy):
-    if self._accelerator_flag == 'sdaa':
-        if self._parallel_devices and len(self._parallel_devices) > 1:
-            return SDAADDPStrategy.strategy_name
-        return SingleSDAAStrategy.strategy_name
-    return _choose_strategy(self)
+if compare_version('pytorch_lightning', operator.gt, "1.8.6"):
+    @PatchModule(module='pytorch_lightning.trainer.connectors.accelerator_connector',
+                dst='_AcceleratorConnector._choose_strategy')
+    def _patch_choose_strategy(self, _choose_strategy):
+        if self._accelerator_flag == 'sdaa':
+            if self._parallel_devices and len(self._parallel_devices) > 1:
+                return SDAADDPStrategy.strategy_name
+            return SingleSDAAStrategy.strategy_name
+        return _choose_strategy(self)
+else:
+    @PatchModule(module='pytorch_lightning.trainer.connectors.accelerator_connector',
+                dst='AcceleratorConnector._choose_strategy')
+    def _patch_choose_strategy(self, _choose_strategy):
+        if self._accelerator_flag == 'sdaa':
+            if self._parallel_devices and len(self._parallel_devices) > 1:
+                return SDAADDPStrategy.strategy_name
+            return SingleSDAAStrategy.strategy_name
+        return _choose_strategy(self)
 
 
 def plugin_register():
     SDAAAccelerator.register_accelerators(AcceleratorRegistry)
     SingleSDAAStrategy.register_strategies(StrategyRegistry)
     SDAADDPStrategy.register_strategies(StrategyRegistry)
+    SDAAFSDPStrategy.register_strategies(StrategyRegistry)
+    SDAADeepSpeedStrategy.register_strategies(StrategyRegistry)

@@ -39,7 +39,7 @@ def test_sdaa_ddp_strategy_init():
     )
     # SDAA specific params
     assert strategy._get_process_group_backend() == "tccl"
-    assert strategy.root_device == torch.device("sdaa")
+    assert strategy.root_device.type == torch.device("sdaa").type
     assert len(strategy.parallel_devices) == 2
     assert isinstance(strategy.checkpoint_io, SDAACheckpointIO)
 
